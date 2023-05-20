@@ -10,6 +10,7 @@ public class Main {
         int numberOfColumns = 9;
         int numberOfRows = 9;
         int numberOfMarks = 0;
+        boolean gameFirstMove = true;
 
         Board board = new Board(numberOfRows, numberOfColumns);
 
@@ -18,49 +19,68 @@ public class Main {
         numberOfMines = Integer.parseInt(scanner.nextLine());
 
 
-        board.placeMines(numberOfMines);
 
-        board.placeHints();
 
-        System.out.print(board.toStringHiddenMines());
+        System.out.print(board.toStringWhileActiveGame());
 
         while (true) {
-            System.out.print("Set/delete mine marks (x and y coordinates): ");
-            String userInputCoordinates = scanner.nextLine();
+            System.out.print("Set/unset mine marks or claim a cell as free: ");
+            String userInputLine = scanner.nextLine();
 
-            int x = Integer.parseInt(userInputCoordinates.split(" ")[1])-1;
-            int y = Integer.parseInt(userInputCoordinates.split(" ")[0])-1;
+            int rowId = Integer.parseInt(userInputLine.split(" ")[1])-1;
+            int columnId = Integer.parseInt(userInputLine.split(" ")[0])-1;
+            String playerCommand = userInputLine.split(" ")[2];
 
-            String coordinateValueOnTheBoard = board.fields[x][y];
-            switch (coordinateValueOnTheBoard) {
-                case "1", "2", "3", "4", "5","6","7","8" -> System.out.println("There is a number here!");
-                case ".", "X" -> {
-                    board.fields[x][y] = "*";
-                    numberOfMarks += 1;
-                    System.out.print(board.toStringHiddenMines());
-                }
-                case "*" -> {
-                    if (board.minesList.contains(new Coordinate(x, y))) {
-                        board.fields[x][y] = "X";
-                    } else {
-                        board.fields[x][y] = ".";
+            switch (playerCommand) {
+                case "mine" -> {
+                    Coordinate targetCoordinate = board.getCoordinateByRowAndColumn(rowId, columnId);
+                    if (targetCoordinate.coordinateState == '.') {
+                        targetCoordinate.coordinateState = '*';
+                    } else if (targetCoordinate.coordinateState == '*') {
+                        targetCoordinate.coordinateState = '.';
                     }
-                    numberOfMarks -= 1;
-                    System.out.print(board.toStringHiddenMines());
+
+
+
+                    //numberOfMarks += 1;
+
+                    if (board.allMinesAreIdentified()) {
+                        System.out.println();
+                        System.out.println(board);
+                        System.out.println("Congratulations! You found all the mines!");
+                        return;
+                    }
+
+                    System.out.println();
+                    System.out.println(board);
+                }
+                case "free" -> {
+                    Coordinate targetCoordinate = board.getCoordinateByRowAndColumn(rowId, columnId);
+
+
+                    //if (targetCoordinate.coordinateState == '.') {
+
+                        if (gameFirstMove) {
+                            board.placeMines(numberOfMines);
+                            board.setHintsAroundBombs();
+                            gameFirstMove = false;
+                        }
+                    if (targetCoordinate.isMine && targetCoordinate.coordinateState == '.') {
+                        board.revealMines();
+                        System.out.println();
+                        System.out.println(board);
+                        System.out.println("You stepped on a mine and failed!");
+                        return;
+                    }
+                    targetCoordinate.coordinateState = targetCoordinate.hintNumericValue == 0 ? '/' :  Character.forDigit(targetCoordinate.hintNumericValue, 10);
+                    board.revealUnexploredCells();
+                        //board.revealUnexploredCells();
+
+                    System.out.println();
+                    System.out.println(board);
                 }
             }
-
-            if (numberOfMarks == numberOfMines && !board.toString().contains("X")) {
-                break;
-            }
-
         }
-
-        System.out.println("Congratulations! You found all the mines!");
-
-
-
-
     }
 
 
